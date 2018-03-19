@@ -146,8 +146,8 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 	tr_img_shape = (tr_n_slices, img_rows_ss, img_cols_ss, n_inputs)
 	tr_msk_shape = (tr_n_slices, img_rows_ss, img_cols_ss, n_labels)
 
-	tr_imgs = np.ndarray(tr_img_shape, dtype=np.float)
-	tr_msks = np.ndarray(tr_msk_shape, dtype=np.float)
+	tr_imgs = np.ndarray(shape=tr_img_shape, dtype=np.float)
+	tr_msks = np.ndarray(shape=tr_msk_shape, dtype=np.float)
 
 	#testing
 	te_n_cases = 60 
