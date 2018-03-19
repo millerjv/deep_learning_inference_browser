@@ -11,8 +11,8 @@ import time
 
 def get_data_from_dir(data_dir):
 	"""
-	From a given folder (in the Brats2016 folder organization), returns the different 
-	volumes corresponding to t1, t1c, f 
+	From a given folder (in the Brats2016 folder organization), returns the different
+	volumes corresponding to t1, t1c, f
 	"""
 	print ("Loading from", data_dir)
 	img_path	= os.path.dirname(data_dir)
@@ -26,7 +26,7 @@ def get_data_from_dir(data_dir):
 	fldr1_list = os.listdir(data_dir)
 	for fldr1 in fldr1_list:
 		fldr1_fn = os.path.join(img_path,img_dir_fn, fldr1)
-		if os.path.isdir(fldr1_fn): 
+		if os.path.isdir(fldr1_fn):
 			fldr2_list = os.listdir(fldr1_fn)
 			for fldr2 in fldr2_list:
 				fn, ext = os.path.splitext(fldr2)
@@ -52,8 +52,8 @@ def get_data_from_dir(data_dir):
 		and len(truth_fn)>0:
 		isComplete = True
 		print ("  T1 :", os.path.basename(t1_fn))
-		print ("  T1c:", os.path.basename(t1c_fn)) 
-		print ("  FLr:", os.path.basename(flair_fn)) 
+		print ("  T1c:", os.path.basename(t1c_fn))
+		print ("  FLr:", os.path.basename(flair_fn))
 		print ("  T2 :", os.path.basename(t2_fn))
 		print ("  Tru:", os.path.basename(truth_fn))
 
@@ -63,13 +63,13 @@ def get_data_from_dir(data_dir):
 	except Exception as e:
 		print (e)
 		t1 = sitk.Image()
-	
+
 	try:
 		t1c = sitk.ReadImage(t1c_fn)
 	except Exception as e:
 		print (e)
 		t1c = sitk.Image()
-	
+
 	try:
 		fl = sitk.ReadImage(flair_fn)
 	except Exception as e:
@@ -81,7 +81,7 @@ def get_data_from_dir(data_dir):
 	except Exception as e:
 		print (e)
 		t2 = sitk.Image()
-	
+
 	try:
 		msk = sitk.ReadImage(truth_fn);
 		msk.SetOrigin(t1.GetOrigin())
@@ -102,7 +102,7 @@ def preprocessSITK(img, img_rows, img_cols, resize_factor=1):
 	"""
 	si_img = img.GetSize()
 	sp_img = img.GetSpacing()
-	
+
 	#crop to the desired size:
 	low_boundary	= [int((si_img[0]-img_rows)/2),int((si_img[1]-img_cols)/2), 0]
 	upper_boundary	= [int((si_img[0]-img_rows+1)/2),int((si_img[1]-img_cols+1)/2),0]
@@ -125,7 +125,7 @@ def normalize(img_arr):
 
 def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resize_factor = 1, out_path='.'):
 	"""
-	creates training with 4 Inputs, and 5 outputs (1-necrosis,2-edema, 
+	creates training with 4 Inputs, and 5 outputs (1-necrosis,2-edema,
 	3-non-enhancing-tumor, 4-enhancing tumore, 5 - rest brain)
 	"""
 
@@ -150,7 +150,7 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 	tr_msks = np.ndarray(shape=tr_msk_shape, dtype=np.float)
 
 	#testing
-	te_n_cases = 60 
+	te_n_cases = 60
 	te_n_slices = slices_per_case*te_n_cases
 	te_img_shape = (te_n_slices, img_rows_ss, img_cols_ss, n_inputs)
 	te_msk_shape = (te_n_slices, img_rows_ss, img_cols_ss, n_labels)
@@ -178,7 +178,7 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 		if not os.path.isdir(data_dir):
 			continue
 
-		# find out which on is in training 
+		# find out which on is in training
 		is_tr = True;
 		if i % 5 == 0:
 			is_tr = False
@@ -199,13 +199,13 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 		flArr  = normalize(sitk.GetArrayFromImage(fl).astype('float'))
 		t2Arr  = normalize(sitk.GetArrayFromImage(t2).astype('float'))
 
-		imgArr = np.zeros((slices_per_case, img_rows_ss, img_cols_ss,n_inputs))	
+		imgArr = np.zeros((slices_per_case, img_rows_ss, img_cols_ss,n_inputs))
 		imgArr[:,:,:,0]	= t1Arr
-		imgArr[:,:,:,1]	= t2Arr 
+		imgArr[:,:,:,1]	= t2Arr
 		imgArr[:,:,:,2]	= flArr
 		imgArr[:,:,:,3]	= t1pArr
 
-	
+
 		mskArr = np.zeros((slices_per_case, img_rows_ss, img_cols_ss,n_labels))
 		mskArrTmp = sitk.GetArrayFromImage(msk)
 		mskArr[:,:,:,0] = (mskArrTmp==1).astype('float')
@@ -218,7 +218,7 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 		maxSlice = slices_per_case
 		for curr_slice in range(slices_per_case):#leasionSlices:
 			n_slice +=1
-			# is slice in training cases, but not used from training,or testin 
+			# is slice in training cases, but not used from training,or testin
 			#in the first state
 			if n_slice % slice_by == 0:
 				print ('.', sep='', end='')
@@ -236,7 +236,7 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 					if curr_sl_tr % 2 == 0:
 						tr_imgs[curr_sl_tr,:,:,:] = imgSl
 						tr_msks[curr_sl_tr,:,:,:] = mskSl
-					else: # flip  
+					else: # flip
 						tr_imgs[curr_sl_tr,:,:,:] = cv2.flip(imgSl,1).reshape(imgSl.shape)
 						tr_msks[curr_sl_tr,:,:,:] = cv2.flip(mskSl,1).reshape(mskSl.shape)
 					curr_sl_tr += 1
@@ -249,15 +249,15 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 
 		#new line needed for the ... simple progress bar
 		print ('\n')
-	
+
 
 		if is_tr:
 			tr_i += 1
-			slicesTr += maxSlice - minSlice+1 
+			slicesTr += maxSlice - minSlice+1
 		else:
 			te_i += 1
 			slicesTe += maxSlice - minSlice+1
-		
+
 
 	print('Done loading ',slicesTr, slicesTe, curr_sl_tr, curr_sl_te)
 
@@ -273,7 +273,7 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 
 	np.save(os.path.join(out_path,'imgs_test.npy'),  te_imgs)
 	np.save(os.path.join(out_path,'msks_test.npy'),  te_msks)
-	
+
 	print('Saving to .npy files done.')
 	print('Train ', curr_sl_tr)
 	print('Test  ', curr_sl_te)
@@ -321,7 +321,7 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 if __name__ == '__main__':
 
 	time_start = time.time()
-	
+
 	data_path = settings.DATA_PATH
 	out_path  = settings.OUT_PATH
 
@@ -331,15 +331,14 @@ if __name__ == '__main__':
 
 	"1 - consider all slices"
 	"5 - consider very firth slices - for time purposes"
-	slice_by   = settings.SLICE_BY 
+	slice_by   = settings.SLICE_BY
 
 	rescale_factor = settings.RESCALE_FACTOR
 
 	#read the data and npy files to make it easy for training
-	create_datasets_4(data_path, img_rows,img_cols, img_slices, slice_by, rescale_factor, 
+	create_datasets_4(data_path, img_rows,img_cols, img_slices, slice_by, rescale_factor,
 		out_path)
 
 	time_end = time.time()
 
 	print ("Done in", time_end-time_start)
-

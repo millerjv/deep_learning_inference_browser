@@ -1,27 +1,27 @@
 from keras import backend as K
-K.set_image_dim_ordering('tf')	
+K.set_image_dim_ordering('tf')
 from keras.callbacks import ModelCheckpoint
-from keras.callbacks import History 
+from keras.callbacks import History
 from keras.models import Model
 
 import numpy as np
 import os
 
-from preprocess import * 
+from preprocess import *
 from helper import *
 import settings
 
 
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
 	fn= "model", mode = 1):
-	
+
 	print('-'*30)
 	print('Loading and preprocessing train data...')
 	print('-'*30)
 	imgs_train, msks_train = load_data(data_path,"_train")
-	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
+	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no,
 		mode)
-	
+
 	print('-'*30)
 	print('Loading and preprocessing test data...')
 	print('-'*30)
@@ -36,7 +36,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
 	print ("Writing model to ", model_fn)
 
-	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
+	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False)
 	# saves all models when set to False
 
 
@@ -44,11 +44,11 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Fitting model...')
 	print('-'*30)
 	history = History()
-	history = model.fit(imgs_train, msks_train, 
-		batch_size=128, 
-		epochs=n_epoch, 
+	history = model.fit(imgs_train, msks_train,
+		batch_size=128,
+		epochs=n_epoch,
 		validation_data = (imgs_test, msks_test),
-		verbose=1, 
+		verbose=1,
 		callbacks=[model_checkpoint])
 
 	json_fn = os.path.join(data_path, fn+'.json')
@@ -74,9 +74,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print ("Evaluation Scores", scores)
 
 if __name__ =="__main__":
-	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR, 
-		settings.IMG_COLS/settings.RESCALE_FACTOR, 
+	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR,
+		settings.IMG_COLS/settings.RESCALE_FACTOR,
 		settings.EPOCHS, settings.IN_CHANNEL_NO, \
 		settings.OUT_CHANNEL_NO, settings.MODEL_FN, settings.MODE)
-
-

@@ -50,17 +50,17 @@ def dice_coef(y_true, y_pred, smooth = 1. ):
 def dice_coef_loss(y_true, y_pred):
 	return -K.log(dice_coef(y_true, y_pred))
 
-def model5_MultiLayer(weights=False, 
-	filepath="", 
-	img_rows = 224, 
-	img_cols = 224, 
+def model5_MultiLayer(weights=False,
+	filepath="",
+	img_rows = 224,
+	img_cols = 224,
 	n_cl_in=3,
-	n_cl_out=3, 
-	dropout=0.2, 
+	n_cl_out=3,
+	dropout=0.2,
 	learning_rate = 0.001,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
-	
+
 	inputs = Input((img_rows, img_cols,n_cl_in))
 	conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
 	conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
@@ -111,6 +111,6 @@ def model5_MultiLayer(weights=False,
 		model.load_weights(filepath)
 
 	if print_summary:
-		print (model.summary())	
+		print (model.summary())
 
 	return model
