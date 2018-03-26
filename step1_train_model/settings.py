@@ -12,7 +12,10 @@ OUT_CHANNEL_NO = 1
 
 EPOCHS = 10
 
-MODEL_FN = "brainWholeTumor" #Name for Mode=1
+#MODEL_FN = "brainWholeTumor" #Name for Mode=1
+#MODEL_FN = "brainWholeTumor-mobile-balanced=True-bn=True" #Name for Mode=1
+#MODEL_FN = "brainWholeTumor-mobile-balanced=False-bn=True" #Name for Mode=1
+MODEL_FN = "brainWholeTumor-mobile-balanced=False-bn=False" #Name for Mode=1
 #MODEL_FN = "brainActiveTumor" #Name for Mode=2
 #MODEL_FN = "brainCoreTumor" #Name for Mode=3
 
