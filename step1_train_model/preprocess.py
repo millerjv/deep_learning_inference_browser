@@ -301,6 +301,8 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	if mode==1:
 		new_imgs[:,:,:,0] = imgs[:,:,:,2] # flair
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
+		if output_no == 2:
+			new_msks[:,:,:,1] = 1 - new_msks[:,:,:,0] 
 		print('-'*10,' Whole tumor', '-'*10)
 	elif mode == 2:
 		#core (non enhancing)

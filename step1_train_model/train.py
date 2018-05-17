@@ -34,7 +34,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Creating and compiling model...')
 	print('-'*30)
 	if "-mobile" in fn:
-		model		= model5_mobile_unet(False, False, img_rows, img_cols, input_no, output_no, batch_normalization="-bn=False" not in fn, balanced="-balanced=False" not in fn)
+		model		= model5_mobile_unet(False, False, img_rows, img_cols, input_no, output_no, batch_normalization="-bn=False" not in fn, batch_normalization_after="-bnafter=False" not in fn, balanced="-balanced=False" not in fn)
 	else:
 		model		= model5_MultiLayer(False, False, img_rows, img_cols, input_no,	output_no)
 	model_fn	= os.path.join(data_path, fn+'__epoch={epoch:03d}.hdf5')
@@ -44,6 +44,11 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# saves all models when set to False
 
 	board = TensorBoard(log_dir="logs/{}/{}__{}".format(fn, fn, time.time()))
+
+	# initial_epoch=1
+	# if initial_epoch > 1:
+	# 	model_fn	= os.path.join(data_path, '{}__epoch={:03d}.hdf5'.format(fn, initial_epoch))
+	# 	model.load_weights(model_fn)
 
 	print('-'*30)
 	print('Fitting model...')
@@ -80,11 +85,19 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 
 if __name__ =="__main__":
+	'''
 	MODEL_FNS = (
 	 	"brainWholeTumor-mobile-balanced=True-bn=False",
 		"brainWholeTumor-mobile-balanced=False-bn=False",
 		"brainWholeTumor-mobile-balanced=True-bn=True",
 		"brainWholeTumor-mobile-balanced=False-bn=True"
+		)
+	MODEL_FNS = (
+		"brainWholeTumor-mobile-sample_dice-balanced=True-bn=False-next",
+		)
+	'''
+	MODEL_FNS = (
+		"brainWholeTumor-mobile-out={}-balanced=True-bn=False".format(settings.OUT_CHANNEL_NO),
 		)
 	for model_fn in MODEL_FNS:
 		train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR,
