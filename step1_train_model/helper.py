@@ -233,6 +233,7 @@ def model5_mobile_unet(weights=False,
     # last
     conv10 = Conv2D(n_cl_out, (1, 1), activation='sigmoid')(conv9) if n_cl_out == 1 else Conv2D(n_cl_out, (1, 1), activation='softmax')(conv9)
     model = Model(inputs=inputs, outputs=conv10)
+    print('Last layer activation {}'.format(model.layers[-1].activation))
 
 
     model.compile(optimizer=Adam(lr=learning_rate),
