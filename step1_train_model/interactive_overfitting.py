@@ -1,6 +1,7 @@
 from keras import backend as K
 K.set_image_dim_ordering('tf')
 from keras.models import Model
+from keras.layers import Lambda
 from keras import losses
 
 import numpy as np
@@ -73,24 +74,36 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	confident = 0.5 #0.9999
 	threshold_msks_pred = K.greater_equal(output_img, confident)
 	modified_msks_pred = K.cast(threshold_msks_pred, dtype='float32')
-	modified_msks_pred = output_img  # set to output_img to skip the belief propagation
-	# strokes
+	modified_msks_pred = output_img
 	#
 	# Draw
 	foreground_strokes = np.full((1, int(img_rows), int(img_cols), int(output_no)), fill_value=0.0, dtype='float32')
-	#foreground_strokes[0, 85:92, 110:115, 0] = 1 #1000000.0
+	foreground_strokes[0, 88:90, 111:113, 0] = 1 #1000000.0
 	#foreground_strokes[0, 75:102, 100:125, 0] = 0.25
 	foreground_strokes[:, :, :, 1] = 1.0 - foreground_strokes[:, :, :, 0]
 	foreground_strokes_var = K.variable(value=foreground_strokes, dtype='float32', name='foreground_strokes')
-	modified_msks_pred = K.maximum(modified_msks_pred, foreground_strokes_var)   # maximum ONLY DOES THE RIGHT THING for foreground channel
+	def apply_foreground_strokes(inputs):
+		(x, y) = inputs
+		return K.concatenate([K.expand_dims(K.maximum(x[:,:,:,0], y[:,:,:,0]), axis=-1), K.expand_dims(K.minimum(x[:,:,:,1], y[:,:,:,1]), axis=-1)])
+	def apply_foreground_strokes_shape(input_shape):
+		return input_shape[0]
+	modified_msks_pred = Lambda(apply_foreground_strokes, output_shape=apply_foreground_strokes_shape)([modified_msks_pred, Input(tensor=foreground_strokes_var)])
+	print('Output of lambda? {}'.format(modified_msks_pred))
 	#modified_msks_pred = foreground_strokes_var
 	#
 	# Erase
 	background_strokes = np.full((1, int(img_rows), int(img_cols), int(output_no)), fill_value=0.0, dtype='float32')
-	background_strokes[0, 55:59, 100:104, 1] = 1.0
+	background_strokes[0, 51:54, 97:99, 1] = 1.0
+	background_strokes[0, 53:56, 98:100, 1] = 1.0
+	background_strokes[0, 55:57, 99:101, 1] = 1.0
 	background_strokes[:, :, :, 0] = 1.0 - background_strokes[:, :, :, 1]
 	background_strokes_var = K.variable(value=background_strokes, dtype='float32', name='background_strokes')
-	#modified_msks_pred = K.minimum(modified_msks_pred, background_strokes_var)   # minimum ONLY DOES THE RIGHT THING for foreground channel
+	def apply_background_strokes(inputs):
+		(x, y) = inputs
+		return K.concatenate([K.expand_dims(K.minimum(x[:,:,:,0], y[:,:,:,0]), axis=-1), K.expand_dims(K.maximum(x[:,:,:,1], y[:,:,:,1]), axis=-1)])
+	def apply_background_strokes_shape(input_shape):
+		return input_shape[0]
+	modified_msks_pred = Lambda(apply_background_strokes, output_shape=apply_background_strokes_shape)([modified_msks_pred, Input(tensor=background_strokes_var)])
 	#modified_msks_pred = background_strokes_var
 	#
 	#
@@ -112,17 +125,18 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	#squash = K.ones_like(grads) * large_grads
 	#grads = K.sign(grads) * K.maximum(K.abs(grads), K.epsilon())
 	#print('Gradients wrt inputs: ', grads)
+	#print('Layer {}'.format(model.layers))
 
 	# define a function show we can show the gradients
-	#normalized_gradients = K.function([input_img, K.learning_phase()], [K.l2_normalize(grads)])
-	normalized_gradients = K.function([input_img, K.learning_phase()], [grads])
+	normalized_gradients = K.function([input_img, K.learning_phase()], [K.l2_normalize(grads)])
+	#normalized_gradients = K.function([input_img, K.learning_phase()], [grads])
 
 	# modify the input placeholder with guided perturbations, modify input to descend gradient
 	#step = 0.10 * (K.max(grads) - K.min(grads)) #2000000 #0.2 # 20000
 	#delta = step * K.l2_normalize(grads) # K.sign(grads)
 	step = 2
 	delta = step * K.l2_normalize(grads)
-	modified_input_img = input_img + delta
+	modified_input_img = input_img - delta
 	#modified_input_img = (modified_input_img - K.mean(modified_input_img)) / K.std(modified_input_img)    # re-normalize the input image
 	#print('Perturbed input: ', modified_input_img)
 
@@ -166,8 +180,9 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 		axes[1, 0].imshow(belief([msks_pred, 0])[0].squeeze()[:,:,0])
 		axes[1, 0].axis('off')
 		axes[1, 1].set_title('Normalized gradients')
+		print('Normalized gradients size {}'.format(normalized_gradients([test, 0])[0].shape))
 		im_grad = axes[1, 1].imshow(normalized_gradients([test, 0])[0].squeeze(), clim=clim_grad)
-		clim_grad=im_grad.properties()['clim']
+		#clim_grad=im_grad.properties()['clim']
 		axes[1, 1].axis('off')
 		axes[1, 2].set_title('Perturbed input @{}X'.format(step))
 		axes[1, 2].imshow(perturbed_input_img[0].squeeze(), clim=clim)
