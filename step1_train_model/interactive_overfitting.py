@@ -23,7 +23,7 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	K.set_epsilon(1.0e-7)
 	print('Epsilon {}'.format(K.epsilon()))
 
-
+	# load test data
 	print('-'*30)
 	print('Loading and preprocessing test data...')
 	print('-'*30)
@@ -31,6 +31,7 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
 	print('Number of test images is ', imgs_test.shape[0])
 
+	# Construct the model
 	print('-'*30)
 	print('Creating and compiling model...')
 	print('-'*30)
@@ -39,6 +40,7 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	else:
 		model		= model5_MultiLayer(False, False, img_rows, img_cols, input_no,	output_no)
 
+	# Load the trained weights
 	print('-'*30)
 	print('Loading saved weights...')
 	print('-'*30)
@@ -46,9 +48,26 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	model.load_weights(model_fn)
 	#model.summary()
 
+	#
+	# Strokes
+	#   Strokes - vector of vectors of vectors, e.g. vector of strokes, each element a vector containing a vector for position and a vector for brush size
+	#            position is upper left corner of brush
+	#            [[[r, c], [br, bc]], [[r, c], [br, bc]], ...]
+	#
+	test_fg_strokes = {}
+	test_fg_strokes[18] = []
+	test_fg_strokes[57] = [[[51,74], [3,3]], [[73,69], [3,1]]]
+	test_fg_strokes[84] = [[[90,113], [1,1]]]
 
+	test_bg_strokes = {}
+	test_bg_strokes[18] = [[[90, 14], [3,3]], [[96,22], [3,3]]]
+	test_bg_strokes[57] = [[[70,73], [3,3]], [[56,73], [1,4]]]
+	test_bg_strokes[84] = [[[52, 97], [3,3]], [[53,98], [3,3]], [[55,99], [3,3]], [[60, 100], [3,3]]]
+
+
+	# Predict and score a test image
 	print('-'*30)
-	test_no = 84
+	test_no = 18 #57 #84
 	print('Predict on test image: (not necessary to call predict)', test_no)
 	#print('-'*30)
 	test = imgs_test[[test_no]]
@@ -75,11 +94,10 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	threshold_msks_pred = K.greater_equal(output_img, confident)
 	modified_msks_pred = K.cast(threshold_msks_pred, dtype='float32')
 	modified_msks_pred = output_img
-	#
-	# Draw
+	# Draw/Add
 	foreground_strokes = np.full((1, int(img_rows), int(img_cols), int(output_no)), fill_value=0.0, dtype='float32')
-	foreground_strokes[0, 88:90, 111:113, 0] = 1 #1000000.0
-	#foreground_strokes[0, 75:102, 100:125, 0] = 0.25
+	for s in test_fg_strokes[test_no] :
+		foreground_strokes[0, s[0][0]:(s[0][0]+s[1][0]), s[0][1]:(s[0][1]+s[1][1]), 0] = 1
 	foreground_strokes[:, :, :, 1] = 1.0 - foreground_strokes[:, :, :, 0]
 	foreground_strokes_var = K.variable(value=foreground_strokes, dtype='float32', name='foreground_strokes')
 	def apply_foreground_strokes(inputs):
@@ -93,9 +111,8 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 	#
 	# Erase
 	background_strokes = np.full((1, int(img_rows), int(img_cols), int(output_no)), fill_value=0.0, dtype='float32')
-	background_strokes[0, 51:54, 97:99, 1] = 1.0
-	background_strokes[0, 53:56, 98:100, 1] = 1.0
-	background_strokes[0, 55:57, 99:101, 1] = 1.0
+	for s in test_bg_strokes[test_no] :
+		background_strokes[0, s[0][0]:(s[0][0]+s[1][0]), s[0][1]:(s[0][1]+s[1][1]), 1] = 1
 	background_strokes[:, :, :, 0] = 1.0 - background_strokes[:, :, :, 1]
 	background_strokes_var = K.variable(value=background_strokes, dtype='float32', name='background_strokes')
 	def apply_background_strokes(inputs):
