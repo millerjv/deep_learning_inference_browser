@@ -144,7 +144,7 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 
     # layer to visualize the gradients
     #vis_layer_name = 'RighBlock_Conv2D_1'
-    vis_layer_name = 'RightBlock_Conv2D_1' #'BottomBlock_DepthwiseConv2DBlock_2_Activation_2'  #'DownBlock_3_DepthwiseConv2DBlock_2_Activation_2' #'BottomBlock_MaxPooling2D_1'
+    vis_layer_name = 'DownBlock_2_DepthwiseConv2DBlock_2_Conv2D_1' #'BottomBlock_DepthwiseConv2DBlock_2_Activation_2'  #'DownBlock_3_DepthwiseConv2DBlock_2_Activation_2' #'BottomBlock_MaxPooling2D_1'
     print('\nVisualize gradients at layer {}\n'.format(vis_layer_name))
     vis_layer = model.get_layer(vis_layer_name)
     visualization_layer_output = K.function([input_img, K.learning_phase()], [vis_layer.output])  # do we have to use a function to force an evaluation?
@@ -238,8 +238,66 @@ def interactive_overfitting(data_path, img_rows, img_cols, input_no  = 3, output
 
         fig.canvas.draw()
 
+        last_test = test
+        last_msks_pred = perturbed_msks_pred
+
         test = perturbed_input_img[0]
         msks_pred = perturbed_msks_pred
+
+
+    test = imgs_test[[test_no]]
+    msks_pred = model.predict(test, batch_size=128, verbose=0)
+    perturbed_input_img = perturb([test, 0])
+
+    fig, axes = plt.subplots(nrows=3, ncols=4, figsize=(12,9))
+    fig.suptitle('Interactive perturbation')
+    axes[0,0].set_title('Original')
+    im = axes[0, 0].imshow(test.squeeze(), clim=clim)
+    clim=im.properties()['clim']
+    axes[0, 0].axis('off')
+    axes[0, 1].set_title('Initial inference')
+    axes[0, 1].imshow(msks_pred[0].squeeze()[:,:,0])  # [:,:,0]
+    axes[0, 1].axis('off')
+    axes[0, 2].set_title('Markup')
+    axes[0, 2].imshow(modified_inference([msks_pred, 0])[0].squeeze()[:,:,0])
+    axes[0, 2].axis('off')
+    axes[0, 3].set_title('GT')
+    axes[0, 3].imshow(msks_test[test_no].squeeze()[:,:,0])
+    axes[0, 3].axis('off')
+    axes[1, 0].set_title('Diff-inference @{}'.format(1))
+    axes[1, 0].imshow(belief([msks_pred, 0])[0].squeeze()[:,:,0])
+    axes[1, 0].axis('off')
+    axes[1, 1].set_title('Normalized gradients @{}'.format(1))
+    im_grad = axes[1, 1].imshow(normalized_gradients([test, 0])[0].squeeze()) #, clim=clim_grad)
+    axes[1, 1].axis('off')
+    axes[1, 2].set_title('Perturbed input @{}'.format(1))
+    axes[1, 2].imshow(perturbed_input_img[0].squeeze(), clim=clim)
+    axes[1, 2].axis('off')
+    axes[1, 3].set_title('GP inference @{}'.format(1))
+    perturbed_msks_pred = model.predict(perturbed_input_img, batch_size=128, verbose=0)
+    axes[1, 3].imshow(perturbed_msks_pred[0].squeeze()[:,:,0])
+    axes[1, 3].axis('off')
+
+
+    axes[2, 0].set_title('Diff-inference @{}'.format(iter))
+    axes[2, 0].imshow(belief([last_msks_pred, 0])[0].squeeze()[:,:,0])
+    axes[2, 0].axis('off')
+    axes[2, 1].set_title('Normalized gradients@{}'.format(iter))
+    im_grad = axes[2, 1].imshow(normalized_gradients([last_test, 0])[0].squeeze()) #, clim=clim_grad)
+    axes[2, 1].axis('off')
+    axes[2, 2].set_title('Perturbed input @{}'.format(iter))
+    axes[2, 2].imshow(last_test.squeeze(), clim=clim)
+    axes[2, 2].axis('off')
+    axes[2, 3].set_title('GP inference @{}'.format(iter))
+    axes[2, 3].imshow(last_msks_pred[0].squeeze()[:,:,0])
+    axes[2, 3].axis('off')
+
+    axes[2, 0].axis('off')
+    axes[2, 1].axis('off')
+
+    fig.canvas.draw()
+
+
 
 if __name__ =="__main__":
     model = "brainWholeTumor-mobile-balanced=True-bn=True-bnafter"
